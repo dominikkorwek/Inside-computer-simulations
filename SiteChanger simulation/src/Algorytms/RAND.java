@@ -1,38 +1,36 @@
 package Algorytms;
 
-import other.Proces;
+import other.Frame;
 
 import java.util.Random;
 
+@SuppressWarnings("ALL")
 public class RAND extends SiteChanger{
-    int emptyFrames;
-    int index;
+    private final Random random;
 
     public RAND() {
         _name = "RAND";
-        index = 0;
-        emptyFrames = _frames.length;
+        random = new Random();
     }
 
     @Override
     void HandleProces() {
-        if (_procesQueue.isEmpty())
+        if (_frameQueue.isEmpty())
             return;
 
-        Proces proces = _procesQueue.removeFirst();
+        Frame frame = _frameQueue.removeFirst();
 
-        for (Proces frame : _frames)
-            if (frame!=null && frame.equals(proces))
+        for (int i = 0; i< _frames.length;i++)
+            if (_frames[i]!=null && _frames[i].equals(frame))
                 return;
+            else if (_frames[i] == null) {
+                _frames[i] = frame;
+                _error++;
+                return;
+            }
 
-        if (emptyFrames > 0){
-            emptyFrames--;
-            _frames[index++] = proces;
-        }else {
-            Random random = new Random();
-            index = random.nextInt(_frames.length);
-            _frames[index] = proces;
-        }
+        int index = random.nextInt(_frames.length);
+        _frames[index] = frame;
         _error++;
     }
 }

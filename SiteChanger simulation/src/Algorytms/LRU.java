@@ -1,36 +1,43 @@
 package Algorytms;
 
-import other.Proces;
-
-import java.util.LinkedList;
-import java.util.Queue;
+import other.Frame;
+import other.parameters;
 
 public class LRU extends SiteChanger{
-    private final Queue<Integer> _siteUsed = new LinkedList<>();
+    private final int[] _siteUsed = new int[parameters.CAPACITY.getValue()];
     public LRU(){
         _name = "LRU";
         for(int i = 0; i < _frames.length; i++)
-            _siteUsed.add(i);
+            _siteUsed[i] = 0;
     }
 
     @Override
-    @SuppressWarnings("DataFlowIssue")
     void HandleProces() {
-        if(_procesQueue.isEmpty())
+        if(_frameQueue.isEmpty())
             return;
 
-        Proces proces = _procesQueue.removeFirst();
+        Frame frame = _frameQueue.removeFirst();
+        int max = -1;
+        int index = -1;
 
-        for(int i = 0; i < _frames.length; i++)
-            if(_frames[i]!=null && _frames[i].equals(proces)){
-                _siteUsed.remove(i);
-                _siteUsed.add(i);
+        for(int i = 0 ; i < _siteUsed.length ; i++)
+            _siteUsed[i]++;
+
+        for (int i = 0; i< _frames.length;i++)
+            if (_frames[i]!=null && _frames[i].equals(frame)) {
+                _siteUsed[i] = 0;
                 return;
             }
 
+        for(int i = 0 ; i < _siteUsed.length ; i++){
+            if (max < _siteUsed[i]){
+                max = _siteUsed[i];
+                index = i;
+            }
+        }
+
         _error++;
-        int index = _siteUsed.poll();
-        _frames[index] = proces;
-        _siteUsed.add(index);
+        _frames[index] = frame;
+        _siteUsed[index] = 0;
     }
 }

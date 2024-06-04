@@ -5,50 +5,54 @@
 
 package Algorytms;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Comparator;
+import java.util.LinkedList;
+
 import other.Proces;
 import other.RealTimeProces;
 
+@SuppressWarnings("ALL")
 public class CSCAN extends AccessToHardDriveAlgorithms {
-    public CSCAN() {
-        name = "CSCAN";
-    }
+    private final int _whereToGo;
+    private int _goToTheBegining;
 
+    public CSCAN(boolean edf) {
+        super(edf);
+        _name = "CSCAN";
+        _whereToGo = 1;
+        _goToTheBegining = 0;
+    }
+    @Override
+    @SuppressWarnings("unchecked")
     void addProces(Proces proces) {
-        _procesesQueue[proces.space] = proces;
-        procesList.add(proces);
+        _sectionsOfProceses[proces.space].add(proces);
+        _procesList.add(proces);
 
-        List<Proces> greaterThanA = procesList.stream()
-                .filter((p) -> p.space >= _pinIndex)
-                .sorted()
-                .toList();
-
-        List<Proces> lessThanA = procesList.stream()
-                .filter((p) -> p.space < _pinIndex)
-                .sorted()
-                .toList();
-
-        procesList = Stream.concat(greaterThanA.stream(), lessThanA.stream())
-                .collect(Collectors.toList());
-
-        if (proces instanceof RealTimeProces)
-            _realTimeProceses.add((RealTimeProces)proces);
+        if (proces instanceof RealTimeProces) {
+            _realTimeProceses.add((RealTimeProces) proces);
+            _realTimeProceses.sort(Comparator.comparingInt(RealTimeProces::getDemandTime));
+        }
     }
 
+    @Override
     protected void HardDriveAlgoritm() {
-        if (!procesList.isEmpty()) {
-            _curTime += stamp;
-            Proces proces = procesList.getFirst();
+        _curTime += _stamp;
+        _pinIndex += _whereToGo;
 
-            if (_pinIndex == proces.space)
-                procesDone(proces);
-
-            ++_pinIndex;
-            if (_pinIndex == _capacity + 1)
-                _pinIndex = 1;
-
+        if (_pinIndex == _capacity + 1) {
+            _pinIndex = 1;
+            _curTime += (int) Math.log(_capacity);
+            _goToTheBegining++;
         }
+
+        if(!_sectionsOfProceses[_pinIndex].isEmpty()){
+            LinkedList<Proces> list = new LinkedList<>(_sectionsOfProceses[_pinIndex]);
+            for (Proces p : list)
+                procesDone(p);
+        }
+    }
+    @Override
+    public String showInfo(){
+        return super.showInfo() + "number of returns to the begining (included in time): " + _goToTheBegining + "\n";
     }
 }

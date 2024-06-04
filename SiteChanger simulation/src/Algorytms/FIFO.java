@@ -1,6 +1,6 @@
 package Algorytms;
 
-import other.Proces;
+import other.Frame;
 
 public class FIFO extends SiteChanger{
     int _index;
@@ -12,18 +12,17 @@ public class FIFO extends SiteChanger{
 
     @Override
     void HandleProces() {
-        if(_procesQueue.isEmpty())
+        if(_frameQueue.isEmpty())
             return;
 
-        Proces proces = _procesQueue.removeFirst();
+        Frame frame = _frameQueue.removeFirst();
 
-        for (Proces frame : _frames)
-            if (frame!=null && frame.equals(proces))
+        for (Frame f : _frames)
+            if (f != null && f.equals(frame))
                 return;
 
         _error++;
-        _frames[_index] = proces;
+        _frames[_index] = frame;
         _index = (++_index)% _frames.length;
-
     }
 }

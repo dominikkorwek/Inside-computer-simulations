@@ -2,8 +2,8 @@ package other;
 
 import Algorytms.*;
 
+@SuppressWarnings("ALL")
 public class Main {
-    @SuppressWarnings("CallToPrintStackTrace")
     public static void main(String[] args) {
         SiteChanger fifo = new FIFO();
         SiteChanger lru = new LRU();
@@ -11,25 +11,28 @@ public class Main {
         SiteChanger rand = new RAND();
         SiteChanger opt = new OPT();
 
-        ProcesMaker maker = ProcesMaker.getInstance();
+        sequenceMaker maker = sequenceMaker.getInstance();
 
-        Thread f1 = new Thread(fifo);
-        Thread l1 = new Thread(lru);
-        Thread a1 = new Thread(alru);
-        Thread r1 = new Thread(rand);
-        Thread o1 = new Thread(opt);
-        Thread m = new Thread(maker);
-
-        m.start();
-        try {
-            Thread.sleep(parameters.DELAY_AFTER_FIRST_PROCES_MADE.getValue());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        for(int i = 0; i<parameters.DELAY_AFTER_FIRST_FRAME_MADE.getValue(); i++){
+            maker.run();
         }
-        f1.start();
-        l1.start();
-        a1.start();
-        r1.start();
-        o1.start();
+
+        boolean t = true;
+        while (t){
+            t = false;
+            t |= fifo.run();
+            t |= lru.run();
+            t |= alru.run();
+            t |= rand.run();
+            t |= opt.run();
+            maker.run();
+        }
+        //ogarnac tworzenie procesow
+        System.out.println(fifo.toString());
+        System.out.println(lru.toString());
+        System.out.println(alru.toString());
+        System.out.println(rand.toString());
+        System.out.println(opt.toString());
+
     }
 }

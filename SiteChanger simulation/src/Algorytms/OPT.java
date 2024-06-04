@@ -1,53 +1,51 @@
 package Algorytms;
 
-import other.Proces;
+import other.Frame;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class OPT extends SiteChanger{
-    private final ArrayList<Proces> pomFrame = new ArrayList<>();
-    int emptyFrames;
-    int siteNumber;
+    private final List<Frame> pomFrame = new ArrayList<>();
+
 
     public OPT() {
         _name = "OPT";
-        emptyFrames = _frames.length;
-        siteNumber = 0;
     }
 
     @Override
     void HandleProces() {
-        if(_procesQueue.isEmpty())
+        if(_frameQueue.isEmpty())
             return;
 
-        Proces proces = _procesQueue.removeFirst();
+        Frame frame = _frameQueue.removeFirst();
 
-        for (Proces frame : _frames)
-            if (frame!=null && frame.equals(proces))
+        for (int i = 0;i< _frames.length;i++)
+            if (_frames[i]!=null && _frames[i].equals(frame))
                 return;
+            else if (_frames[i] == null){
+                _frames[i] = frame;
+                _error++;
+                return;
+            }
 
         _error++;
 
-        if (emptyFrames > 0) {
-            emptyFrames--;
-            _frames[siteNumber++] = proces;
-            return;
-        }
         pomFrame.clear();
         pomFrame.addAll(Arrays.asList(_frames));
 
         int i = 0;
-        while(pomFrame.size() != 1 && _procesQueue.size() - 1 >= i){
-            Proces pomProces = _procesQueue.get(i++);
+        while(pomFrame.size() != 1 && _frameQueue.size() - 1 >= i){
+            Frame pomProces = _frameQueue.get(i++);
             pomFrame.remove(pomProces);
         }
 
-        Proces procesToSwap = pomFrame.getFirst();
+        Frame frameToSwap = pomFrame.getFirst();
 
         for(i = 0; i < _frames.length; i++)
-            if(_frames[i] == procesToSwap) {
-                _frames[i] = proces;
+            if(_frames[i] == frameToSwap) {
+                _frames[i] = frame;
                 return;
             }
     }

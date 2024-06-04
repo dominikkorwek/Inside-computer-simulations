@@ -1,6 +1,6 @@
 package Algorytms;
 
-import other.Proces;
+import other.Frame;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -17,15 +17,16 @@ public class ALRU extends SiteChanger{
 
     @Override
     void HandleProces() {
-        if(_procesQueue.isEmpty())
+        if(_frameQueue.isEmpty())
             return;
 
-        Proces proces = _procesQueue.removeFirst();
+        Frame frame = _frameQueue.removeFirst();
 
         for(int i = 0; i < _frames.length; i++)
-            if(_frames[i]!=null &&_frames[i].equals(proces)){
+            if(_frames[i]!=null &&_frames[i].equals(frame)){
                 BitSite site = new BitSite(i);
                 _siteUsed.remove(site);
+                site.referenceBit = true;
                 _siteUsed.add(site);
                 return;
             }
@@ -42,7 +43,7 @@ public class ALRU extends SiteChanger{
             else index = site.index;
         }
 
-        _frames[index] = proces;
+        _frames[index] = frame;
         _siteUsed.add(new BitSite(index));
         _error++;
     }
@@ -65,6 +66,5 @@ public class ALRU extends SiteChanger{
 
             return false;
         }
-
     }
 }

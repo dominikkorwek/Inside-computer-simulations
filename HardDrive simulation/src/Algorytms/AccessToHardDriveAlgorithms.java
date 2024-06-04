@@ -1,114 +1,78 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
+
 
 package Algorytms;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+
 import other.Proces;
 import other.ProcesMaker;
 import other.RealTimeProces;
 import other.parameters;
 
-public abstract class AccessToHardDriveAlgorithms implements Runnable {
-    private final int _maxProcesNumber = parameters.NUMBER_OF_PROCESSES.getValue();
-    protected final int _capacity = parameters.CAPACITY.getValue();
-    private final int mode = parameters.EDForSCAN.getValue();
-    protected final int stamp = parameters.TIME_STAMP.getValue();
-
-
-    protected Proces[] _procesesQueue;
+@SuppressWarnings("rawtypes")
+public abstract class AccessToHardDriveAlgorithms {
+    protected final int _maxProcesNumber;
+    protected final int _capacity;
+    protected final int _stamp;
+    protected LinkedList[] _sectionsOfProceses;
     protected List<RealTimeProces> _realTimeProceses;
     protected List<Proces> _endedProcesses;
-    protected List<Integer> filledSpace;
-    protected List<Proces> procesList;
+    protected List<Proces> _procesList;
     private final ProcesMaker _procesMaker;
     protected int _curTime;
     protected int _pinIndex;
     protected int _numberOfProceses;
-    Runnable functionMode;
-    protected String name;
+    private final String _mode;
+    private final Runnable _functionMode;
+    protected String _name;
 
-    public AccessToHardDriveAlgorithms() {
-        _procesesQueue = new Proces[_capacity + 1];
+    public AccessToHardDriveAlgorithms(boolean edf) {
+        _capacity = parameters.CAPACITY.getValue();
+        _sectionsOfProceses = new LinkedList[_capacity + 1];
+        for (int i = 0;i<_capacity + 1;i++)
+            _sectionsOfProceses[i] = new LinkedList<>();
+
         _endedProcesses = new ArrayList<>();
-        filledSpace = new ArrayList<>();
         _realTimeProceses = new ArrayList<>();
-        procesList = new LinkedList<>();
+        _procesList = new LinkedList<>();
         _procesMaker = ProcesMaker.getInstance();
         _numberOfProceses = 0;
         _curTime = 0;
-        _pinIndex = 1;
-        functionMode = mode == 0 ? this::EDF : this::FDSCAN;
-
-        for(int i = 1; i <= _capacity; ++i)
-            filledSpace.add(i);
+        _pinIndex = parameters.PIN_START_INDEX.getValue();
+        _functionMode = edf ? this::EDF : this::FDSCAN;
+        _mode = edf ? "EDF" : "FDSCAN";
+        _maxProcesNumber = parameters.NUMBER_OF_PROCESSES.getValue();
+        _stamp = parameters.TIME_STAMP.getValue();
     }
 
-    @SuppressWarnings("BusyWait")
     public void run() {
-        while(_maxProcesNumber >= _numberOfProceses + 1 || _endedProcesses.size() != _maxProcesNumber) {
             getProcesFromQueue(_curTime);
             HardDriveManagement();
             updateRealTime();
-
-            try {
-                Thread.sleep(parameters.LOOP_SLEEP.getValue());
-            } catch (InterruptedException e) {
-                throw new RuntimeException();
-            }
-        }
-
-        System.out.println(name + " : " + _curTime);
     }
+
 
     public void getProcesFromQueue(int _curTime) {
         if (_numberOfProceses < _procesMaker.procesList.size()) {
             try {
-                Proces proces = (Proces)(_procesMaker.procesList.get(_numberOfProceses++)).clone();
-                fillSpace(proces);
-                proces._birthTime = _curTime;
-                addProces(proces);
+                Proces newProces = (Proces)(_procesMaker.procesList.get(_numberOfProceses++)).clone();
+                newProces._birthTime = _curTime;
+                addProces(newProces);
             } catch (CloneNotSupportedException e) {
                 throw new RuntimeException();
             }
         }
     }
 
-    private void fillSpace(Proces newProces) {
-        Random random = new Random();
-
-        try {
-            int number = random.nextInt(filledSpace.size() - 1);
-            newProces.space = filledSpace.get(number);
-            filledSpace.remove(number);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("not enough space in HardDrive");
-        }
-    }
-
     private void HardDriveManagement() {
         if (!_realTimeProceses.isEmpty())
-            functionMode.run();
+            _functionMode.run();
         else
             HardDriveAlgoritm();
     }
 
-    protected void HardDriveAlgoritm() {
-        if (!procesList.isEmpty()) {
-            _curTime += stamp;
-            Proces proces = procesList.getFirst();
 
-            if (_pinIndex == proces.space)
-                procesDone(proces);
-
-            _pinIndex += Math.abs(proces.space - _pinIndex) > Math.abs(proces.space - (_pinIndex + 1)) ? 1 : -1;
-        }
-    }
+    protected abstract void HardDriveAlgoritm();
 
     protected void procesDone(Proces proces) {
         proces.endProces(_curTime);
@@ -119,19 +83,18 @@ public abstract class AccessToHardDriveAlgorithms implements Runnable {
             throw new RuntimeException();
         }
 
-        procesList.remove(proces);
+        _procesList.remove(proces);
         if (proces instanceof RealTimeProces)
             _realTimeProceses.remove(proces);
 
-        filledSpace.add(proces.space);
-        _procesesQueue[proces.space] = null;
+        _sectionsOfProceses[proces.space].remove(proces);
     }
 
     private void updateRealTime() {
         List<RealTimeProces> toDelete = new ArrayList<>();
 
         for (RealTimeProces proces : _realTimeProceses) {
-            boolean stillWaiting = proces.update(stamp);
+            boolean stillWaiting = proces.update(_stamp);
 
             if (!stillWaiting)
                 toDelete.add(proces);
@@ -144,28 +107,79 @@ public abstract class AccessToHardDriveAlgorithms implements Runnable {
 
     }
 
-    void EDF() {
+    private void EDF() {
         RealTimeProces proces = _realTimeProceses.getFirst();
-        _curTime += stamp;
-        _pinIndex = proces.space;
-        procesDone(proces);
+        _curTime += _stamp;
+        _pinIndex += Math.abs(proces.space - _pinIndex) > Math.abs(proces.space - (_pinIndex + 1)) ? 1 : -1;
+        if (_pinIndex == proces.space)
+            procesDone(proces);
     }
 
-    void FDSCAN() {
+    @SuppressWarnings("unchecked")
+    private void FDSCAN() {
         RealTimeProces proces = _realTimeProceses.getFirst();
 
-        if (Math.abs(_pinIndex - proces.space) > proces.demandTime) {
+        while (Math.abs(_pinIndex - proces.space) >= proces.getDemandTime()) {
             proces.starving = true;
             procesDone(proces);
+            if(_realTimeProceses.isEmpty())
+                return;
+            proces = _realTimeProceses.getFirst();
+        }
 
-        } else {
-            _curTime += stamp;
-            _pinIndex += Math.abs(proces.space - _pinIndex) > Math.abs(proces.space - (_pinIndex + 1)) ? 1 : -1;
+        _curTime += _stamp;
+        _pinIndex += Math.abs(proces.space - _pinIndex) > Math.abs(proces.space - (_pinIndex + 1)) ? 1 : -1;
 
-            if (_procesesQueue[_pinIndex] != null)
-                procesDone(_procesesQueue[_pinIndex]);
+        if(!_sectionsOfProceses[_pinIndex].isEmpty()){
+           LinkedList<Proces> list = new LinkedList<>(_sectionsOfProceses[_pinIndex]);
+           for (Proces p : list)
+               procesDone(p);
         }
     }
 
     abstract void addProces(Proces proces);
+
+    public String showInfo(){
+        String value = "";
+        value += "----------------------\n";
+        value += "name: " + _name +"\n";
+        value += "end time: " + _curTime + "\n";
+        if(parameters.NEW_REALTIME_PROCES_PROPABILITY.getValue() != 0)
+            value += "strategy: " + _mode + "\n";
+
+        int starving = 0;
+        int minWaitingTime = Integer.MAX_VALUE;
+        int maxWaitingTime = 0;
+        double averageWaitingTime = 0;
+
+        for (Proces p : _endedProcesses){
+            if(p instanceof RealTimeProces){
+                if (((RealTimeProces) p).starving) {
+                    ++starving;
+                    continue;
+                }
+            }
+            if(minWaitingTime > p.getWaitingTime())
+                minWaitingTime = p.getWaitingTime();
+
+            if (maxWaitingTime < p.getWaitingTime())
+                maxWaitingTime = p.getWaitingTime();
+
+            averageWaitingTime += p.getWaitingTime();
+        }
+        averageWaitingTime /= (_maxProcesNumber - starving);
+
+        if(parameters.NEW_REALTIME_PROCES_PROPABILITY.getValue() != 0)
+            value += "starving Real Time Processes: " + starving + "\n";
+
+        value += "minimum proces waiting time: " + minWaitingTime + "\n";
+        value += "maximum proces waiting time: " + maxWaitingTime + "\n";
+        value += "average proces waiting time: " + averageWaitingTime + "\n";
+
+        return value;
+    }
+
+    public int getEndedProcessesSize() {
+        return _endedProcesses.size();
+    }
 }

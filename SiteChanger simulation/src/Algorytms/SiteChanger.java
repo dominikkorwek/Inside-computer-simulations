@@ -2,54 +2,52 @@ package Algorytms;
 
 import java.util.*;
 import other.*;
-public abstract class SiteChanger implements Runnable{
-    private final int _maxProcesNumber = parameters.NUMBER_OF_PROCESSES.getValue();
+public abstract class SiteChanger{
+    private final int _maxFrameNumber = parameters.NUMBER_OF_FRAME.getValue();
     private final int _capacity = parameters.CAPACITY.getValue();
-    private final ProcesMaker _procesMaker = ProcesMaker.getInstance();
-    private final int _stamp = parameters.TIME_STAMP.getValue();
+    private final sequenceMaker _sequenceMaker = sequenceMaker.getInstance();
 
-    protected Proces[] _frames;
-    protected List<Proces> _procesQueue;
+    protected Frame[] _frames;
+    protected final List<Frame> _frameQueue;
     protected  int _error;
-    protected int _curTime;
-    protected int _numberOfProceses;
+    protected int _numberOfsequences;
+    protected int _numberOfFrames;
     protected String _name;
 
     public SiteChanger() {
-        _numberOfProceses = 0;
-        _curTime = 0;
+        _numberOfsequences = 0;
+        _numberOfFrames = 0;
         _error = 0;
-        _frames = new Proces[_capacity];
-        _procesQueue = new ArrayList<>();
+        _frames = new Frame[_capacity];
+        _frameQueue = new ArrayList<>();
     }
-    @SuppressWarnings("BusyWait")
-    public void run(){
-        while(_maxProcesNumber >= _numberOfProceses + 1 || !_procesQueue.isEmpty() ){
+    public boolean run(){
+        if(_maxFrameNumber >= _numberOfFrames + 1 || !_frameQueue.isEmpty() ) {
             getProcesFromQueue();
             HandleProces();
-            _curTime+=_stamp;
-
-            try {
-                Thread.sleep(parameters.LOOP_SLEEP.getValue());
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            return true;
         }
-        System.out.println(_name +": " + _error);
+
+        return false;
     }
     public void getProcesFromQueue(){
-        while (_numberOfProceses < _procesMaker.getProcesList().size()){
+        while (_numberOfsequences < _sequenceMaker.getProcesList().size()){
             try {
-            Proces proces = (Proces)_procesMaker.getProcesList().get(_numberOfProceses++).clone();
-            addProces(proces);
+            sequence sequence = (sequence) _sequenceMaker.getProcesList().get(_numberOfsequences++).clone();
+            _frameQueue.addAll(sequence.getFrameList());
+            _numberOfFrames += sequence._framesNumber;
 
             } catch (CloneNotSupportedException e) {
                throw new RuntimeException(e);
             }
         }
     }
-    private void addProces(Proces proces){
-        _procesQueue.add(proces);
-    }
+
     abstract void HandleProces();
+
+    public String toString(){
+        String v = "name: " + _name + "\n";
+        v += "number of errors: " + _error + "\n";
+        return v;
+    }
 }

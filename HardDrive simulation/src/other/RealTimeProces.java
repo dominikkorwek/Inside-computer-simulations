@@ -8,21 +8,23 @@ package other;
 import java.util.Random;
 
 public class RealTimeProces extends Proces {
-    private final int minDemandTime = parameters.MIN_DEMAND_TIME.getValue();
-    private final int maxDemandTime = parameters.MAX_DEMAND_TIME.getValue();
-    public int demandTime;
+    private final int _minDemandTime;
+    private final int _maxDemandTime;
+    private int _demandTime;
     public boolean starving;
 
     public RealTimeProces() {
         Random random = new Random();
 
         starving = false;
-        demandTime = random.nextInt(maxDemandTime - minDemandTime) + minDemandTime;
+        _minDemandTime = parameters.MIN_DEMAND_TIME_FOR_REALTIME.getValue();
+        _maxDemandTime = parameters.MAX_DEMAND_TIME_FOR_REALTIME.getValue();
+        _demandTime = random.nextInt(_maxDemandTime - _minDemandTime) + _minDemandTime;
     }
 
     public boolean update(int stamp) {
-        demandTime -= stamp;
-        return demandTime > 0;
+        _demandTime -= stamp;
+        return _demandTime > 0;
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -30,7 +32,11 @@ public class RealTimeProces extends Proces {
     }
 
     public String toString() {
-        String var10000 = super.toString();
-        return var10000 + " d:" + demandTime + " " + starving;
+        String var = super.toString();
+        return var + " d:" + _demandTime + " " + starving;
+    }
+
+    public int getDemandTime() {
+        return _demandTime;
     }
 }
